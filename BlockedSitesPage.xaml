@@ -32,7 +32,8 @@
             </Image.Style>
         </Image>
 
-        <ListView Name="lvEntries" Grid.Row="1" Background="#CEDFD9" BorderBrush="Black"/>
+        <ListView Name="lvEntries" Grid.Row="1" Background="#CEDFD9" BorderBrush="Black"
+                  TextElement.FontSize="20"/>
 
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>

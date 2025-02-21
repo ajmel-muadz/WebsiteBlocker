@@ -17,6 +17,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Path = System.IO.Path;
 
 namespace WebsiteBlocker
 {
@@ -28,6 +29,8 @@ namespace WebsiteBlocker
         public MenuPage()
         {
             InitializeComponent();
+
+            DisplayBlockingStatus();
         }
 
         // When anything in text input is changed, we change visibility of placeholder text.
@@ -74,22 +77,73 @@ namespace WebsiteBlocker
             tbUrl.Clear();
         }
 
-        // Start blocking session for some amount of time
+        // Stop blocking session
+        private void btnStop_Click(object sender, RoutedEventArgs e)
+        {
+            // A blocking session is happening if the hosts file is populated. Thus, we check
+            // if the hosts file is populated as a determinant.
+            string? rootDirectory = Path.GetPathRoot(Environment.SystemDirectory);
+            string hostsPath = $"{rootDirectory}\\Windows\\System32\\drivers\\etc\\hosts";
+            int numOfLinesInHostsFile = GetNumOfLinesInHostsFile(hostsPath);
+
+            if (numOfLinesInHostsFile != 0)
+            {
+                MessageBoxResult confirmationMessage = MessageBox.Show("Are you sure you want to stop the block session?",
+                    "Simple Website Blocker notice", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                if (confirmationMessage == MessageBoxResult.Yes)
+                {
+                    // Clearing hosts file means we stop it basically.
+                    ClearHostsFile(hostsPath);
+                }
+            }
+            else
+            {
+                MessageBox.Show("You cannot stop a session that is not in progress!", "Simple Website Blocker notice",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+
+            DisplayBlockingStatus();
+        }
+
+        // Start blocking session
         private void btnStart_Click(object sender, RoutedEventArgs e)
         {
             // In order to block website URLs we must access the host file and add the URLs.
             // Credit to: https://learn.microsoft.com/en-us/troubleshoot/developer/visualstudio/csharp/language-compilers/read-write-text-file
-            string hostsPath = "C:\\Windows\\System32\\drivers\\etc\\hosts";
+            string? rootDirectory = Path.GetPathRoot(Environment.SystemDirectory);
+            string hostsPath = $"{rootDirectory}\\Windows\\System32\\drivers\\etc\\hosts";
             var allWebsiteUrls = GetWebsiteUrls();
 
-            // Before writing to hosts file, clear it so we start from a blank slate.
-            ClearHostsFile(hostsPath);
-
-            // Now we just write each website URL in database to the hosts file.
-            foreach (string url in allWebsiteUrls)
+            // We only allow modifying hosts file if stuff is empty
+            if (allWebsiteUrls.Count > 0)
             {
-                WriteToHostsFile(url, hostsPath);
+                // Ensure we can ask for user confirmation before starting block session.
+                MessageBoxResult confirmationMessage = MessageBox.Show("Are you sure you want to start a block session?",
+                    "Simple Website Blocker notice", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                if (confirmationMessage == MessageBoxResult.Yes)
+                {
+                    // Before writing to hosts file, clear it so we start from a blank slate.
+                    ClearHostsFile(hostsPath);
+
+                    // Now we just write each website URL in database to the hosts file.
+                    foreach (string url in allWebsiteUrls)
+                    {
+                        WriteToHostsFile(url, hostsPath);
+                    }
+
+                    MessageBox.Show("Block session has started.", "Simple Website Blocker notice",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                }
             }
+            else
+            {
+                MessageBox.Show("You cannot start a session with an empty block list!", "Simple Website Blocker notice",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+
+            DisplayBlockingStatus();
         }
 
         // Function to add data to SQL database.
@@ -136,6 +190,30 @@ namespace WebsiteBlocker
             }
         }
 
+        private int GetNumOfLinesInHostsFile(string path)
+        {
+            int numOfLinesInFile = 0;
+            string? line;
+            try
+            {
+                StreamReader sr = new StreamReader(path);
+                line = sr.ReadLine();
+                while (line != null)
+                {
+                    line = sr.ReadLine();
+                    numOfLinesInFile++;
+                }
+                sr.Close();
+                Console.ReadLine();
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine("Exception: " + e.Message);
+            }
+
+            return numOfLinesInFile;
+        }
+
         private ArrayList GetWebsiteUrls()
         {
             var allWebsiteUrls = new ArrayList();
@@ -161,6 +239,24 @@ namespace WebsiteBlocker
             }
 
             return allWebsiteUrls;
+        }
+
+        private void DisplayBlockingStatus()
+        {
+            string? rootDirectory = Path.GetPathRoot(Environment.SystemDirectory);
+            string hostsPath = $"{rootDirectory}\\Windows\\System32\\drivers\\etc\\hosts";
+            int numOfLinesInHostsFile = GetNumOfLinesInHostsFile(hostsPath);
+
+            if (numOfLinesInHostsFile != 0)
+            {
+                tbBlockStatus.Text = "(Website blocking is currently active)";
+                tbBlockStatus.Foreground = Brushes.Green;
+            }
+            else
+            {
+                tbBlockStatus.Text = "(Website blocking is currently inactive)";
+                tbBlockStatus.Foreground = Brushes.Red;
+            }
         }
     }
 }

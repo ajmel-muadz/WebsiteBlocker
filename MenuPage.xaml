@@ -15,7 +15,10 @@
         </Grid.RowDefinitions>
 
         <TextBlock Name="tbAppTitle" Text="Simple Website Blocker" FontSize="30" 
-                   HorizontalAlignment="Center" FontFamily="Georgia"/>
+                   HorizontalAlignment="Center" FontFamily="Georgia" VerticalAlignment="Top"/>
+
+        <TextBlock Name="tbBlockStatus" FontSize="20"
+                   HorizontalAlignment="Center" VerticalAlignment="Bottom"/>
 
         <TextBlock Grid.Row="1" Name="tblPlaceholder" Text="Enter URL to block"
                    Width="500" Height="30" Background="Transparent" FontSize="25"
@@ -34,8 +37,11 @@
                 <Button Name="btnAdd" Content="Add to block list" Width="125" Height="25"
                         Click="btnAdd_Click" Margin="10,0,10,0"/>
 
+                <Button Name="btnStop" Content="Stop block session" Width="125" Height="25"
+                        Click="btnStop_Click" Margin="0,0,10,0" Background="IndianRed"/>
+
                 <Button Name="btnStart" Content="Start block session" Width="125" Height="25"
-                        Click="btnStart_Click"/>
+                        Click="btnStart_Click" Background="LightGreen"/>
             </StackPanel>
         </Grid>
     </Grid>
