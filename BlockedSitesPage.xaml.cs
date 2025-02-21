@@ -15,6 +15,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Path = System.IO.Path;
 
 namespace WebsiteBlocker
 {
@@ -40,47 +41,77 @@ namespace WebsiteBlocker
         // Delete a number of items on the list
         private void btnDelete_Click(object sender, RoutedEventArgs e)
         {
-            var items = lvEntries.SelectedItems;
-            var itemsList = new ArrayList(items);
+            MainWindow mainWindow = (MainWindow)System.Windows.Application.Current.MainWindow;
+            MenuPage menuPage = mainWindow.GetMenuPage();
 
-            string connectionString = $"SERVER=localhost;DATABASE=app_blocker_db;UID={DbConfig.SqlUid};PASSWORD={DbConfig.SqlPassword};";
+            string? rootDirectory = Path.GetPathRoot(Environment.SystemDirectory);
+            string hostsPath = $"{rootDirectory}\\Windows\\System32\\drivers\\etc\\hosts";
+            int numOfLinesInHostsFile = menuPage.GetNumOfLinesInHostsFile(hostsPath);
 
-            string query;
-            foreach (var item in itemsList)
+            if (numOfLinesInHostsFile == 0)
             {
-                query = "DELETE FROM blockedapps WHERE app_name=@item";
+                var items = lvEntries.SelectedItems;
+                var itemsList = new ArrayList(items);
+
+                string connectionString = $"SERVER=localhost;DATABASE=app_blocker_db;UID={DbConfig.SqlUid};PASSWORD={DbConfig.SqlPassword};";
+
+                string query;
+                foreach (var item in itemsList)
+                {
+                    query = "DELETE FROM blockedapps WHERE app_name=@item";
+
+                    using (var connection = new MySqlConnection(connectionString))
+                    {
+                        using (var command = new MySqlCommand(query, connection))
+                        {
+                            connection.Open();
+                            command.Parameters.AddWithValue("@item", item);  // Anything with a parameter requires this
+                            command.ExecuteNonQuery();  // Must use for UPDATE, INSERT and DELETE
+                                                        // Similar to one in python at uni.
+                        }
+                    }
+                }
+
+                LoadBlockedSitesFromDb();
+            }
+            else
+            {
+                MessageBox.Show("You cannot delete during a blocking session!", "Simple Website Blocker notice",
+    MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private void btnClear_Click(object sender, RoutedEventArgs e)
+        {
+            MainWindow mainWindow = (MainWindow)System.Windows.Application.Current.MainWindow;
+            MenuPage menuPage = mainWindow.GetMenuPage();
+
+            string? rootDirectory = Path.GetPathRoot(Environment.SystemDirectory);
+            string hostsPath = $"{rootDirectory}\\Windows\\System32\\drivers\\etc\\hosts";
+            int numOfLinesInHostsFile = menuPage.GetNumOfLinesInHostsFile(hostsPath);
+
+            if (numOfLinesInHostsFile == 0)
+            {
+                string connectionString = $"SERVER=localhost;DATABASE=app_blocker_db;UID={DbConfig.SqlUid};PASSWORD={DbConfig.SqlPassword};";
+                string query = "DELETE FROM blockedapps";
 
                 using (var connection = new MySqlConnection(connectionString))
                 {
                     using (var command = new MySqlCommand(query, connection))
                     {
                         connection.Open();
-                        command.Parameters.AddWithValue("@item", item);  // Anything with a parameter requires this
                         command.ExecuteNonQuery();  // Must use for UPDATE, INSERT and DELETE
                                                     // Similar to one in python at uni.
                     }
                 }
+
+                LoadBlockedSitesFromDb();
             }
-
-            LoadBlockedSitesFromDb();
-        }
-
-        private void btnClear_Click(object sender, RoutedEventArgs e)
-        {
-            string connectionString = $"SERVER=localhost;DATABASE=app_blocker_db;UID={DbConfig.SqlUid};PASSWORD={DbConfig.SqlPassword};";
-            string query = "DELETE FROM blockedapps";
-
-            using (var connection = new MySqlConnection(connectionString))
+            else
             {
-                using (var command = new MySqlCommand(query, connection))
-                {
-                    connection.Open();
-                    command.ExecuteNonQuery();  // Must use for UPDATE, INSERT and DELETE
-                                                // Similar to one in python at uni.
-                }
+                MessageBox.Show("You cannot clear during a blocking session!", "Simple Website Blocker notice",
+MessageBoxButton.OK, MessageBoxImage.Warning);
             }
-
-            LoadBlockedSitesFromDb();
         }
 
         // Simply load the blocked sites from SQL database.

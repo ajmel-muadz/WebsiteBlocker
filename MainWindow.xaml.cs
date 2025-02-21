@@ -31,5 +31,10 @@ namespace WebsiteBlocker
         {
             return blockedSitesPage;
         }
+
+        public MenuPage GetMenuPage()
+        {
+            return menuPage;
+        }
     }
 }

@@ -68,13 +68,26 @@ namespace WebsiteBlocker
         // When this button is clicked we add blocked sites to SQL database
         private void btnAdd_Click(object sender, RoutedEventArgs e)
         {
-            // Add the user input in url text box to database ONLY if string input is not empty
-            if (!string.IsNullOrEmpty(tbUrl.Text.Trim()))
-            {
-                AddSiteToDb(tbUrl.Text);
-            }
+            // Add the user input in url text box to database ONLY if string input is not empty.
+            // Also only allow if blocking is not in progress.
+            string? rootDirectory = Path.GetPathRoot(Environment.SystemDirectory);
+            string hostsPath = $"{rootDirectory}\\Windows\\System32\\drivers\\etc\\hosts";
+            int numOfLinesInHostsFile = GetNumOfLinesInHostsFile(hostsPath);
 
-            tbUrl.Clear();
+            if (numOfLinesInHostsFile == 0)
+            {
+                if (!string.IsNullOrEmpty(tbUrl.Text.Trim()))
+                {
+                    AddSiteToDb(tbUrl.Text);
+                }
+
+                tbUrl.Clear();
+            }
+            else
+            {
+                MessageBox.Show("You cannot add during a blocking session!", "Simple Website Blocker notice",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
 
         // Stop blocking session
@@ -190,7 +203,7 @@ namespace WebsiteBlocker
             }
         }
 
-        private int GetNumOfLinesInHostsFile(string path)
+        public int GetNumOfLinesInHostsFile(string path)
         {
             int numOfLinesInFile = 0;
             string? line;
