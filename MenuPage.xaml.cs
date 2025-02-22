@@ -127,9 +127,20 @@ namespace WebsiteBlocker
             string? rootDirectory = Path.GetPathRoot(Environment.SystemDirectory);
             string hostsPath = $"{rootDirectory}\\Windows\\System32\\drivers\\etc\\hosts";
             var allWebsiteUrls = GetWebsiteUrls();
+            int numOfLinesInHostsFile = GetNumOfLinesInHostsFile(hostsPath);
 
+            if (numOfLinesInHostsFile != 0)
+            {
+                MessageBox.Show("Session has already started!", "Simple Website Blocker notice",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            else if (allWebsiteUrls.Count == 0)
+            {
+                MessageBox.Show("You cannot start a session with an empty block list!", "Simple Website Blocker notice",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
             // We only allow modifying hosts file if stuff is empty
-            if (allWebsiteUrls.Count > 0)
+            else if (allWebsiteUrls.Count > 0)
             {
                 // Ensure we can ask for user confirmation before starting block session.
                 MessageBoxResult confirmationMessage = MessageBox.Show("Are you sure you want to start a block session?",
@@ -149,11 +160,6 @@ namespace WebsiteBlocker
                     MessageBox.Show("Block session has started.", "Simple Website Blocker notice",
                         MessageBoxButton.OK, MessageBoxImage.Information);
                 }
-            }
-            else
-            {
-                MessageBox.Show("You cannot start a session with an empty block list!", "Simple Website Blocker notice",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
             }
 
             DisplayBlockingStatus();
