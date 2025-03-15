@@ -1,22 +1,10 @@
-﻿using AppBlocker;
-using MySql.Data.MySqlClient;
-using Org.BouncyCastle.Asn1;
-using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections;
+using System.Data.SQLite;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using Path = System.IO.Path;
 
 namespace WebsiteBlocker
@@ -165,20 +153,19 @@ namespace WebsiteBlocker
             DisplayBlockingStatus();
         }
 
-        // Function to add data to SQL database.
+        // Function to add data to SQL database. Converted to SQLite.
         private void AddSiteToDb(string siteName)
         {
-            string connectionString = $"SERVER=localhost;DATABASE=app_blocker_db;UID={DbConfig.SqlUid};PASSWORD={DbConfig.SqlPassword};";
-            string query = "INSERT INTO blockedapps (app_name) VALUES (@siteName)";
+            string connectionString = "Data Source=app_blocker.db;Version=3;";
+            string query = "INSERT INTO blockedapps (app_name) VALUES (@siteName);";
 
-            using (var connection = new MySqlConnection(connectionString))
+            using (var connection = new SQLiteConnection(connectionString))
             {
-                using (var command = new MySqlCommand(query, connection))
+                using (var command = new SQLiteCommand(query, connection))
                 {
                     connection.Open();
                     command.Parameters.AddWithValue("@siteName", siteName);  // Anything with a parameter requires this
-                    command.ExecuteNonQuery();  // Must use for UPDATE, INSERT and DELETE
-                                                // Similar to one in python at uni.
+                    command.ExecuteNonQuery();  // Must use for UPDATE, INSERT, DELETE: Similar to one in python at uni.
                 }
             }
         }
@@ -233,24 +220,24 @@ namespace WebsiteBlocker
             return numOfLinesInFile;
         }
 
+        // Converted to SQLite
         private ArrayList GetWebsiteUrls()
         {
             var allWebsiteUrls = new ArrayList();
 
-            string connectionString = $"SERVER=localhost;DATABASE=app_blocker_db;UID={DbConfig.SqlUid};PASSWORD={DbConfig.SqlPassword};";
-            string query = "SELECT * FROM blockedapps";
+            string connectionString = "Data Source=app_blocker.db;Version=3;";
+            string query = "SELECT * FROM blockedapps;";
 
-            using (var connection = new MySqlConnection(connectionString))
+            using (var connection = new SQLiteConnection(connectionString))
             {
-                using (var command = new MySqlCommand(query, connection))
+                using (var command = new SQLiteCommand(query, connection))
                 {
                     connection.Open();
-                    using (MySqlDataReader reader =
-                        command.ExecuteReader(System.Data.CommandBehavior.CloseConnection))
+                    using (SQLiteDataReader reader = command.ExecuteReader())
                     {
                         while (reader.Read())
                         {
-                            string appName = reader.GetString("app_name");
+                            string appName = reader.GetString(1);
                             allWebsiteUrls.Add(appName);
                         }
                     }

@@ -1,6 +1,5 @@
-﻿using System.Security.Cryptography.X509Certificates;
+﻿using System.Data.SQLite;
 using System.Windows;
-using System.Windows.Controls;
 
 namespace WebsiteBlocker
 {
@@ -13,6 +12,7 @@ namespace WebsiteBlocker
         public MainWindow()
         {
             InitializeComponent();
+            InitializeDatabase();
 
             NavigateToMenuPage(); // Navigate to the menu first upon program start.
         }
@@ -35,6 +35,28 @@ namespace WebsiteBlocker
         public MenuPage GetMenuPage()
         {
             return menuPage;
+        }
+
+        // Code to initialise SQLite database for persitent storage of blocked websites.
+        private void InitializeDatabase()
+        {
+            // DB is automatically created if it does not exist.
+            string connectionString = "Data Source=app_blocker.db;Version=3;";
+            using (var connection = new SQLiteConnection(connectionString))
+            {
+                connection.Open();
+
+                // NOTE: @ is for multi-line.
+                string query = @"CREATE TABLE IF NOT EXISTS blockedapps(
+                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    app_name TEXT
+                               );";
+
+                using (var command = new SQLiteCommand(query, connection))
+                {
+                    command.ExecuteNonQuery();
+                }
+            }
         }
     }
 }
